@@ -5257,6 +5257,14 @@ export interface Page {
 
   touchscreen: Touchscreen;
 
+  /**
+   * **NOTE** Only available for Chromium atm.
+   *
+   * Provides access to the [WebMCP](https://playwright.dev/docs/api/class-webmcp) API for interacting with tools
+   * registered by web pages.
+   */
+  webMCP: WebMCP;
+
   [Symbol.asyncDispose](): Promise<void>;
 }
 
@@ -22181,6 +22189,240 @@ export interface WebError {
    * The page that produced this unhandled exception, if any.
    */
   page(): null|Page;
+}
+
+/**
+ * **NOTE** WebMCP is an experimental API and is subject to change. It is currently only supported in Chromium 149+
+ * and requires the `--enable-features=WebMCPTesting,DevToolsWebMCPSupport` browser launch flags to be enabled.
+ *
+ * The WebMCP class provides access to the [WebMCP](https://playwright.dev/docs/api/class-webmcp) API, allowing
+ * interaction with tools registered by web pages through the Model Context Protocol.
+ *
+ * An example of discovering and executing WebMCP tools:
+ *
+ * ```js
+ * const browser = await chromium.launch({
+ *   args: ['--enable-features=WebMCPTesting,DevToolsWebMCPSupport'],
+ * });
+ * const page = await browser.newPage();
+ * await page.goto('https://example.com');
+ *
+ * const webMCP = page.webMCP;
+ * await webMCP.enable();
+ *
+ * const tools = webMCP.tools();
+ * for (const tool of tools)
+ *   console.log(`Tool: ${tool.name} - ${tool.description}`);
+ * ```
+ *
+ */
+export interface WebMCP {
+  /**
+   * Emitted when new WebMCP tools are registered on the page.
+   */
+  on(event: 'toolsadded', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Emitted when WebMCP tools are removed from the page. This is also fired when a frame navigates, removing all tools
+   * that were registered by that frame.
+   */
+  on(event: 'toolsremoved', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Adds an event listener that will be automatically removed after it is triggered once. See `addListener` for more information about this event.
+   */
+  once(event: 'toolsadded', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Adds an event listener that will be automatically removed after it is triggered once. See `addListener` for more information about this event.
+   */
+  once(event: 'toolsremoved', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Emitted when new WebMCP tools are registered on the page.
+   */
+  addListener(event: 'toolsadded', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Emitted when WebMCP tools are removed from the page. This is also fired when a frame navigates, removing all tools
+   * that were registered by that frame.
+   */
+  addListener(event: 'toolsremoved', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Removes an event listener added by `on` or `addListener`.
+   */
+  removeListener(event: 'toolsadded', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Removes an event listener added by `on` or `addListener`.
+   */
+  removeListener(event: 'toolsremoved', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Removes an event listener added by `on` or `addListener`.
+   */
+  off(event: 'toolsadded', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Removes an event listener added by `on` or `addListener`.
+   */
+  off(event: 'toolsremoved', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Emitted when new WebMCP tools are registered on the page.
+   */
+  prependListener(event: 'toolsadded', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Emitted when WebMCP tools are removed from the page. This is also fired when a frame navigates, removing all tools
+   * that were registered by that frame.
+   */
+  prependListener(event: 'toolsremoved', listener: (data: {
+    tools: Array<WebMCPTool>;
+  }) => any): this;
+
+  /**
+   * Enables the WebMCP domain for this page. This must be called before tools can be discovered. Enabling the domain
+   * will trigger a [webMCP.on('toolsadded')](https://playwright.dev/docs/api/class-webmcp#web-mcp-event-tools-added)
+   * event for all currently registered tools.
+   */
+  enable(): Promise<void>;
+
+  /**
+   * Executes a registered WebMCP tool by name with the given input parameters.
+   * @param name Name of the tool to execute.
+   * @param input Input parameters matching the tool's `inputSchema`.
+   */
+  executeTool(name: string, input?: Serializable): Promise<{
+    /**
+     * Status of the invocation: `"Completed"`, `"Canceled"`, or `"Error"`.
+     */
+    status: string;
+
+    /**
+     * Output of the tool execution. Only present when status is `"Completed"`.
+     */
+    output?: Serializable;
+
+    /**
+     * Error description. Only present when status is `"Error"`.
+     */
+    errorText?: string;
+  }>;
+
+  /**
+   * Returns all currently registered WebMCP tools on the page.
+   */
+  tools(): Array<WebMCPTool>;
+}
+
+/**
+ * Represents a registered WebMCP tool available on the page. WebMCP tools can be registered by web pages either
+ * imperatively via JavaScript (`navigator.modelContext.registerTool()`) or declaratively via HTML forms with
+ * `toolname` and `tooldescription` attributes.
+ */
+export interface WebMCPTool {
+  /**
+   * Executes this tool with the given input parameters.
+   * @param input Input parameters matching the tool's `inputSchema`.
+   */
+  execute(input?: Serializable): Promise<{
+    /**
+     * Status of the invocation: `"Completed"`, `"Canceled"`, or `"Error"`.
+     */
+    status: string;
+
+    /**
+     * Output of the tool execution.
+     */
+    output?: Serializable;
+
+    /**
+     * Error description.
+     */
+    errorText?: string;
+  }>;
+
+  annotations?: {
+    /**
+     * Whether the tool only reads state without modifications.
+     */
+    readOnly?: boolean;
+
+    /**
+     * Whether the declarative tool was declared with the autosubmit attribute.
+     */
+    autosubmit?: boolean;
+  };
+
+  /**
+   * Tool description.
+   */
+  description: string;
+
+  /**
+   * Returns the corresponding form element when the tool was registered via a declarative HTML form. Returns `null` for
+   * imperatively registered tools.
+   */
+  formElement: Promise<null|ElementHandle>;
+
+  /**
+   * The frame that registered this tool.
+   */
+  frame: Frame;
+
+  /**
+   * JSON Schema for the tool's input parameters.
+   */
+  inputSchema?: Object;
+
+  /**
+   * Source location where the tool was registered, if available.
+   */
+  location?: {
+    /**
+     * URL of the script that registered the tool.
+     */
+    url: string;
+
+    /**
+     * Line number in the script.
+     */
+    lineNumber: number;
+
+    /**
+     * Column number in the script.
+     */
+    columnNumber: number;
+  };
+
+  /**
+   * Tool name.
+   */
+  name: string;
 }
 
 /**

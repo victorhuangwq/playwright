@@ -36,6 +36,7 @@ import { nullProgress } from '../progress';
 import type { Artifact } from '../artifact';
 import type { BrowserContext } from '../browserContext';
 import type { CRCoverage } from '../chromium/crCoverage';
+import type { CRWebMCP } from '../chromium/crWebMCP';
 import type { Download } from '../download';
 import type { FileChooser } from '../fileChooser';
 import type { BrowserContextDispatcher } from './browserContextDispatcher';
@@ -64,6 +65,7 @@ export class PageDispatcher extends Dispatcher<Page, channels.PageChannel, Brows
   private _locatorHandlers = new Set<number>();
   private _jsCoverageActive = false;
   private _cssCoverageActive = false;
+  private _webMCPActive = false;
   private _screencastClient: ScreencastClient | undefined;
   private _videoRecorder: VideoRecorder | undefined;
 
@@ -449,6 +451,73 @@ export class PageDispatcher extends Dispatcher<Page, channels.PageChannel, Brows
     return await progress.race(coverage.stopCSSCoverage());
   }
 
+  async webMCPEnable(params: channels.PageWebMCPEnableParams, progress: Progress): Promise<void> {
+    const webMCP = this._page.webMCP as CRWebMCP;
+    if (!webMCP)
+      throw new Error('WebMCP is only supported in Chromium');
+    webMCP.setEventListener({
+      onToolsAdded: tools => {
+        const dispatchTools = tools.map(tool => {
+          const frame = webMCP.frameForTool(tool.name);
+          return {
+            ...tool,
+            frame: frame ? FrameDispatcher.from(this.parentScope(), frame) : undefined,
+          };
+        });
+        this._dispatchEvent('webMCPToolsAdded', { tools: dispatchTools });
+      },
+      onToolsRemoved: tools => {
+        const dispatchTools = tools.map(tool => {
+          const frame = webMCP.frameForTool(tool.name);
+          return {
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            annotations: tool.annotations,
+            frame: frame ? FrameDispatcher.from(this.parentScope(), frame) : undefined,
+          };
+        });
+        this._dispatchEvent('webMCPToolsRemoved', { tools: dispatchTools });
+      },
+    });
+    await webMCP.enable(progress);
+    this._webMCPActive = true;
+  }
+
+  async webMCPTools(params: channels.PageWebMCPToolsParams, progress: Progress): Promise<channels.PageWebMCPToolsResult> {
+    const webMCP = this._page.webMCP as CRWebMCP;
+    if (!webMCP)
+      throw new Error('WebMCP is only supported in Chromium');
+    const toolInfos = webMCP.toolInfos();
+    return {
+      tools: toolInfos.map(tool => {
+        const frame = webMCP.frameForTool(tool.name);
+        return {
+          ...tool,
+          frame: frame ? FrameDispatcher.from(this.parentScope(), frame) : undefined,
+        };
+      }),
+    };
+  }
+
+  async webMCPExecuteTool(params: channels.PageWebMCPExecuteToolParams, progress: Progress): Promise<channels.PageWebMCPExecuteToolResult> {
+    const webMCP = this._page.webMCP as CRWebMCP;
+    if (!webMCP)
+      throw new Error('WebMCP is only supported in Chromium');
+    return await webMCP.executeTool(progress, params.name, params.input);
+  }
+
+  async webMCPToolFormElement(params: channels.PageWebMCPToolFormElementParams, progress: Progress): Promise<channels.PageWebMCPToolFormElementResult> {
+    const webMCP = this._page.webMCP as CRWebMCP;
+    if (!webMCP)
+      throw new Error('WebMCP is only supported in Chromium');
+    const handle = await progress.race(webMCP.resolveFormElement(params.name));
+    const frame = webMCP.frameForTool(params.name);
+    return {
+      element: handle && frame ? ElementHandleDispatcher.from(FrameDispatcher.from(this.parentScope(), frame), handle) : undefined,
+    };
+  }
+
   _onFrameAttached(frame: Frame) {
     this._dispatchEvent('frameAttached', { frame: FrameDispatcher.from(this.parentScope(), frame) });
   }
@@ -479,6 +548,9 @@ export class PageDispatcher extends Dispatcher<Page, channels.PageChannel, Brows
     if (this._cssCoverageActive)
       (this._page.coverage as CRCoverage).stopCSSCoverage().catch(() => {});
     this._cssCoverageActive = false;
+    if (this._webMCPActive)
+      (this._page.webMCP as CRWebMCP)?.disable().catch(() => {});
+    this._webMCPActive = false;
     this.screencastStop({}, undefined).catch(() => {});
   }
 

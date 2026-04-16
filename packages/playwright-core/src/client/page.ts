@@ -25,6 +25,7 @@ import { Artifact } from './artifact';
 import { ChannelOwner } from './channelOwner';
 import { evaluationScript } from './clientHelper';
 import { Coverage } from './coverage';
+import { WebMCP } from './webMCP';
 import { DisposableObject, DisposableStub } from './disposable';
 import { Download } from './download';
 import { ElementHandle, determineScreenshotType } from './elementHandle';
@@ -91,6 +92,7 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
   _webSocketRoutes: WebSocketRouteHandler[] = [];
 
   readonly coverage: Coverage;
+  readonly webMCP: WebMCP;
   readonly keyboard: Keyboard;
   readonly mouse: Mouse;
   readonly request: APIRequestContext;
@@ -156,6 +158,7 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
     this._channel.on('worker', ({ worker }) => this._onWorker(Worker.from(worker)));
 
     this.coverage = new Coverage(this._channel);
+    this.webMCP = new WebMCP(this);
 
     this.once(Events.Page.Close, () => this._closedOrCrashedScope.close(this._closeErrorWithReason()));
     this.once(Events.Page.Crash, () => this._closedOrCrashedScope.close(new TargetClosedError()));

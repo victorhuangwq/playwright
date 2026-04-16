@@ -93,6 +93,7 @@ export interface PageDelegate {
 
   pdf?: (options: channels.PagePdfParams) => Promise<Buffer>;
   coverage?: () => any;
+  webMCP?: () => any;
 
   // Work around WebKit's raf issues on Windows.
   rafCountForStablePosition(): number;
@@ -184,6 +185,7 @@ export class Page extends SdkObject<PageEventMap> {
   private _workers = new Map<string, Worker>();
   readonly pdf: ((options: channels.PagePdfParams) => Promise<Buffer>) | undefined;
   readonly coverage: any;
+  readonly webMCP: any;
   readonly requestInterceptors: network.RouteHandler[] = [];
   video: Artifact | undefined;
   private _opener: Page | undefined;
@@ -212,6 +214,7 @@ export class Page extends SdkObject<PageEventMap> {
     if (delegate.pdf)
       this.pdf = delegate.pdf.bind(delegate);
     this.coverage = delegate.coverage ? delegate.coverage() : null;
+    this.webMCP = delegate.webMCP ? delegate.webMCP() : null;
     this.isStorageStatePage = browserContext.isCreatingStorageStatePage();
   }
 

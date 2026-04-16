@@ -2085,6 +2085,51 @@ Page:
     bringToFront:
       title: Bring to front
 
+    webMCPEnable:
+      title: Enable WebMCP
+      group: configuration
+
+    webMCPTools:
+      title: Get WebMCP tools
+      returns:
+        tools:
+          type: array
+          items:
+            type: object
+            properties:
+              name: string
+              description: string
+              inputSchema: json?
+              annotations:
+                type: object?
+                properties:
+                  readOnly: boolean?
+                  autosubmit: boolean?
+              frame: Frame?
+              location:
+                type: object?
+                properties:
+                  url: string
+                  lineNumber: int
+                  columnNumber: int
+
+    webMCPExecuteTool:
+      title: Execute WebMCP tool
+      parameters:
+        name: string
+        input: json?
+      returns:
+        status: string
+        output: json?
+        errorText: string?
+
+    webMCPToolFormElement:
+      title: Get form element for a WebMCP tool
+      parameters:
+        name: string
+      returns:
+        element: ElementHandle?
+
     pickLocator:
       title: Pick locator
       group: configuration
@@ -2237,6 +2282,47 @@ Page:
     worker:
       parameters:
         worker: Worker
+
+    webMCPToolsAdded:
+      parameters:
+        tools:
+          type: array
+          items:
+            type: object
+            properties:
+              name: string
+              description: string
+              inputSchema: json?
+              annotations:
+                type: object?
+                properties:
+                  readOnly: boolean?
+                  autosubmit: boolean?
+              frame: Frame?
+              location:
+                type: object?
+                properties:
+                  url: string
+                  lineNumber: int
+                  columnNumber: int
+
+    webMCPToolsRemoved:
+      parameters:
+        tools:
+          type: array
+          items:
+            type: object
+            properties:
+              name: string
+              description: string
+              inputSchema: json?
+              annotations:
+                type: object?
+                properties:
+                  readOnly: boolean?
+                  autosubmit: boolean?
+              frame: Frame?
+
 
 
 

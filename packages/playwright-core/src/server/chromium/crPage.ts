@@ -26,6 +26,7 @@ import * as network from '../network';
 import { Page, PageBinding, Worker } from '../page';
 import { CRBrowserContext } from './crBrowser';
 import { CRCoverage } from './crCoverage';
+import { CRWebMCP } from './crWebMCP';
 import { DragManager } from './crDragDrop';
 import { createHandle, CRExecutionContext } from './crExecutionContext';
 import { RawKeyboardImpl, RawMouseImpl, RawTouchscreenImpl } from './crInput';
@@ -62,6 +63,7 @@ export class CRPage implements PageDelegate {
   readonly _networkManager: CRNetworkManager;
   private readonly _pdf: CRPDF;
   private readonly _coverage: CRCoverage;
+  private readonly _webMCP: CRWebMCP;
   readonly _browserContext: CRBrowserContext;
 
   // Holds window features for the next popup being opened via window.open,
@@ -85,6 +87,7 @@ export class CRPage implements PageDelegate {
     this.rawTouchscreen = new RawTouchscreenImpl(client);
     this._pdf = new CRPDF(client);
     this._coverage = new CRCoverage(client);
+    this._webMCP = new CRWebMCP(client, () => this._page, (backendNodeId, to) => this._mainFrameSession._adoptBackendNodeId(backendNodeId, to));
     this._browserContext = browserContext;
     this._page = new Page(this, browserContext);
     // Create a unique utility world for this Playwright instance, just in case there
@@ -339,6 +342,10 @@ export class CRPage implements PageDelegate {
 
   coverage(): CRCoverage {
     return this._coverage;
+  }
+
+  webMCP(): CRWebMCP {
+    return this._webMCP;
   }
 
   async getFrameElement(frame: frames.Frame): Promise<dom.ElementHandle> {
@@ -623,6 +630,7 @@ class FrameSession {
   _onFrameNavigated(framePayload: Protocol.Page.Frame, initial: boolean) {
     if (this._eventBelongsToStaleFrame(framePayload.id))
       return;
+    this._crPage.webMCP().onFrameNavigated(framePayload.id);
     this._page.frameManager.frameCommittedNewDocumentNavigation(framePayload.id, framePayload.url + (framePayload.urlFragment || ''), framePayload.name || '', framePayload.loaderId, initial);
     if (!initial)
       this._firstNonInitialNavigationCommittedFulfill();

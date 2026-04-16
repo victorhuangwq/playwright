@@ -2116,6 +2116,8 @@ export interface PageEventTarget {
   on(event: 'webSocketRoute', callback: (params: PageWebSocketRouteEvent) => void): this;
   on(event: 'webSocket', callback: (params: PageWebSocketEvent) => void): this;
   on(event: 'worker', callback: (params: PageWorkerEvent) => void): this;
+  on(event: 'webMCPToolsAdded', callback: (params: PageWebMCPToolsAddedEvent) => void): this;
+  on(event: 'webMCPToolsRemoved', callback: (params: PageWebMCPToolsRemovedEvent) => void): this;
 }
 export interface PageChannel extends PageEventTarget, EventTargetChannel {
   _type_Page: boolean;
@@ -2158,6 +2160,10 @@ export interface PageChannel extends PageEventTarget, EventTargetChannel {
   startCSSCoverage(params: PageStartCSSCoverageParams, progress?: Progress): Promise<PageStartCSSCoverageResult>;
   stopCSSCoverage(params?: PageStopCSSCoverageParams, progress?: Progress): Promise<PageStopCSSCoverageResult>;
   bringToFront(params?: PageBringToFrontParams, progress?: Progress): Promise<PageBringToFrontResult>;
+  webMCPEnable(params?: PageWebMCPEnableParams, progress?: Progress): Promise<PageWebMCPEnableResult>;
+  webMCPTools(params?: PageWebMCPToolsParams, progress?: Progress): Promise<PageWebMCPToolsResult>;
+  webMCPExecuteTool(params: PageWebMCPExecuteToolParams, progress?: Progress): Promise<PageWebMCPExecuteToolResult>;
+  webMCPToolFormElement(params: PageWebMCPToolFormElementParams, progress?: Progress): Promise<PageWebMCPToolFormElementResult>;
   pickLocator(params?: PagePickLocatorParams, progress?: Progress): Promise<PagePickLocatorResult>;
   cancelPickLocator(params?: PageCancelPickLocatorParams, progress?: Progress): Promise<PageCancelPickLocatorResult>;
   hideHighlight(params?: PageHideHighlightParams, progress?: Progress): Promise<PageHideHighlightResult>;
@@ -2215,6 +2221,35 @@ export type PageWebSocketEvent = {
 };
 export type PageWorkerEvent = {
   worker: WorkerChannel,
+};
+export type PageWebMCPToolsAddedEvent = {
+  tools: {
+    name: string,
+    description: string,
+    inputSchema?: any,
+    annotations?: {
+      readOnly?: boolean,
+      autosubmit?: boolean,
+    },
+    frame?: FrameChannel,
+    location?: {
+      url: string,
+      lineNumber: number,
+      columnNumber: number,
+    },
+  }[],
+};
+export type PageWebMCPToolsRemovedEvent = {
+  tools: {
+    name: string,
+    description: string,
+    inputSchema?: any,
+    annotations?: {
+      readOnly?: boolean,
+      autosubmit?: boolean,
+    },
+    frame?: FrameChannel,
+  }[],
 };
 export type PageAddInitScriptParams = {
   source: string,
@@ -2675,6 +2710,49 @@ export type PageStopCSSCoverageResult = {
 export type PageBringToFrontParams = {};
 export type PageBringToFrontOptions = {};
 export type PageBringToFrontResult = void;
+export type PageWebMCPEnableParams = {};
+export type PageWebMCPEnableOptions = {};
+export type PageWebMCPEnableResult = void;
+export type PageWebMCPToolsParams = {};
+export type PageWebMCPToolsOptions = {};
+export type PageWebMCPToolsResult = {
+  tools: {
+    name: string,
+    description: string,
+    inputSchema?: any,
+    annotations?: {
+      readOnly?: boolean,
+      autosubmit?: boolean,
+    },
+    frame?: FrameChannel,
+    location?: {
+      url: string,
+      lineNumber: number,
+      columnNumber: number,
+    },
+  }[],
+};
+export type PageWebMCPExecuteToolParams = {
+  name: string,
+  input?: any,
+};
+export type PageWebMCPExecuteToolOptions = {
+  input?: any,
+};
+export type PageWebMCPExecuteToolResult = {
+  status: string,
+  output?: any,
+  errorText?: string,
+};
+export type PageWebMCPToolFormElementParams = {
+  name: string,
+};
+export type PageWebMCPToolFormElementOptions = {
+
+};
+export type PageWebMCPToolFormElementResult = {
+  element?: ElementHandleChannel,
+};
 export type PagePickLocatorParams = {};
 export type PagePickLocatorOptions = {};
 export type PagePickLocatorResult = {
@@ -2789,6 +2867,8 @@ export interface PageEvents {
   'webSocketRoute': PageWebSocketRouteEvent;
   'webSocket': PageWebSocketEvent;
   'worker': PageWorkerEvent;
+  'webMCPToolsAdded': PageWebMCPToolsAddedEvent;
+  'webMCPToolsRemoved': PageWebMCPToolsRemovedEvent;
 }
 
 // ----------- Frame -----------

@@ -4326,6 +4326,17 @@ Returns the page's title.
 * since: v1.8
 - type: <[Touchscreen]>
 
+## property: Page.webMCP
+* since: v1.60
+* langs: js
+- type: <[WebMCP]>
+
+:::note
+Only available for Chromium atm.
+:::
+
+Provides access to the [WebMCP](./class-webmcp) API for interacting with tools registered by web pages.
+
 ## async method: Page.type
 * since: v1.8
 * deprecated: In most cases, you should use [`method: Locator.fill`] instead. You only need to press keys one by one if there is special keyboard handling on the page - in this case use [`method: Locator.pressSequentially`].

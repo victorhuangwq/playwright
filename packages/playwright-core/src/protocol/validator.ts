@@ -1243,6 +1243,35 @@ scheme.PageWebSocketEvent = tObject({
 scheme.PageWorkerEvent = tObject({
   worker: tChannel(['Worker']),
 });
+scheme.PageWebMCPToolsAddedEvent = tObject({
+  tools: tArray(tObject({
+    name: tString,
+    description: tString,
+    inputSchema: tOptional(tAny),
+    annotations: tOptional(tObject({
+      readOnly: tOptional(tBoolean),
+      autosubmit: tOptional(tBoolean),
+    })),
+    frame: tOptional(tChannel(['Frame'])),
+    location: tOptional(tObject({
+      url: tString,
+      lineNumber: tInt,
+      columnNumber: tInt,
+    })),
+  })),
+});
+scheme.PageWebMCPToolsRemovedEvent = tObject({
+  tools: tArray(tObject({
+    name: tString,
+    description: tString,
+    inputSchema: tOptional(tAny),
+    annotations: tOptional(tObject({
+      readOnly: tOptional(tBoolean),
+      autosubmit: tOptional(tBoolean),
+    })),
+    frame: tOptional(tChannel(['Frame'])),
+  })),
+});
 scheme.PageAddInitScriptParams = tObject({
   source: tString,
 });
@@ -1538,6 +1567,41 @@ scheme.PageStopCSSCoverageResult = tObject({
 });
 scheme.PageBringToFrontParams = tOptional(tObject({}));
 scheme.PageBringToFrontResult = tOptional(tObject({}));
+scheme.PageWebMCPEnableParams = tOptional(tObject({}));
+scheme.PageWebMCPEnableResult = tOptional(tObject({}));
+scheme.PageWebMCPToolsParams = tOptional(tObject({}));
+scheme.PageWebMCPToolsResult = tObject({
+  tools: tArray(tObject({
+    name: tString,
+    description: tString,
+    inputSchema: tOptional(tAny),
+    annotations: tOptional(tObject({
+      readOnly: tOptional(tBoolean),
+      autosubmit: tOptional(tBoolean),
+    })),
+    frame: tOptional(tChannel(['Frame'])),
+    location: tOptional(tObject({
+      url: tString,
+      lineNumber: tInt,
+      columnNumber: tInt,
+    })),
+  })),
+});
+scheme.PageWebMCPExecuteToolParams = tObject({
+  name: tString,
+  input: tOptional(tAny),
+});
+scheme.PageWebMCPExecuteToolResult = tObject({
+  status: tString,
+  output: tOptional(tAny),
+  errorText: tOptional(tString),
+});
+scheme.PageWebMCPToolFormElementParams = tObject({
+  name: tString,
+});
+scheme.PageWebMCPToolFormElementResult = tObject({
+  element: tOptional(tChannel(['ElementHandle'])),
+});
 scheme.PagePickLocatorParams = tOptional(tObject({}));
 scheme.PagePickLocatorResult = tObject({
   selector: tString,
