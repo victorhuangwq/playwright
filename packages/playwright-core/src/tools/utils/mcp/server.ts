@@ -87,7 +87,16 @@ export function createServer(name: string, version: string, factory: ServerBacke
   const server = new Server({ name, version }, {
     capabilities: {
       tools: {},
-    }
+    },
+    instructions: [
+      'Pages running on Chrome 150+ with the --enable-features=WebMCP flag may register callable tools via document.modelContext.registerTool().',
+      'To discover and invoke these WebMCP tools, use a CDP session:',
+      '1. Send "WebMCP.enable" to start monitoring.',
+      '2. Listen for "WebMCP.toolsAdded" events to discover registered tools.',
+      '3. Call "WebMCP.invokeTool" with { frameId, toolName, input } to invoke a tool.',
+      '4. Listen for "WebMCP.toolResponded" to receive the result.',
+      'You can use the browser_run_code_unsafe tool or a CDP session to interact with the WebMCP domain.',
+    ].join(' '),
   });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
